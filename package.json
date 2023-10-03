@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/BSMuse/tinyapp/issues"
   },
-  "homepage": "https://github.com/BSMuse/tinyapp#readme"
+  "homepage": "https://github.com/BSMuse/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
