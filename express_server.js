@@ -34,24 +34,57 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+}); 
+
+app.post("/redirect", (req, res) => {
+  const longURL = 'http://' + req.body.longURL;
+  console.log(longURL)
+  const id = generateRandomString(6);
+
+  // Add the new URL to your 'urlDatabase' object
+  urlDatabase[id] = longURL;
+
+  console.log("Created new URL:", longURL);
+
+  // Render the "urls_show" template with the newly created URL's details
+  const templateVars = { id, longURL };
+  res.render("urls_show", templateVars);
+});
+
+
+
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+
+  // You should generate an ID here and redirect to the details page
+  const id = generateRandomString(6);
+  const longURL = req.body.longURL;
+
+  // Add the new URL to your 'urlDatabase' object
+  urlDatabase[id] = longURL;
+
+  // Redirect to the details page for the newly created URL
+  res.redirect(`/urls/${id}`);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const id = req.params.id; 
+  const id = req.params.id;
 
   const url = urlDatabase[id];
+
+  console.log("URL for ID", id, "is", url);
 
   if (!url) {
     res.status(404).send("URL not found");
   } else {
-    const templateVars = { id: req.params.id, longURL: url };
-    res.render("urls_show", templateVars);
+    // Redirect directly to the long URL
+    res.redirect(url);
   }
-}); 
+});
 
-app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id]
+  res.redirect(longURL);
 });
 
 app.get("/hello", (req, res) => {
