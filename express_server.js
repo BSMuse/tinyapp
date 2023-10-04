@@ -40,13 +40,7 @@ app.post("/redirect", (req, res) => {
   const longURL = 'http://' + req.body.longURL;
   console.log(longURL)
   const id = generateRandomString(6);
-
-  // Add the new URL to your 'urlDatabase' object
   urlDatabase[id] = longURL;
-
-  console.log("Created new URL:", longURL);
-
-  // Render the "urls_show" template with the newly created URL's details
   const templateVars = { id, longURL };
   res.render("urls_show", templateVars);
 });
@@ -54,16 +48,9 @@ app.post("/redirect", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-
-  // You should generate an ID here and redirect to the details page
   const id = generateRandomString(6);
   const longURL = req.body.longURL;
-
-  // Add the new URL to your 'urlDatabase' object
   urlDatabase[id] = longURL;
-
-  // Redirect to the details page for the newly created URL
   res.redirect(`/urls/${id}`);
 });
 
@@ -85,6 +72,12 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]
   res.redirect(longURL);
+});
+
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id;
+  delete  urlDatabase[id];
+  res.redirect('/urls');
 });
 
 app.get("/hello", (req, res) => {
