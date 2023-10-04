@@ -36,13 +36,11 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 }); 
 
-app.post("/redirect", (req, res) => {
+app.post("/newurl", (req, res) => {
   const longURL = 'http://' + req.body.longURL;
-  console.log(longURL)
   const id = generateRandomString(6);
   urlDatabase[id] = longURL;
-  const templateVars = { id, longURL };
-  res.render("urls_show", templateVars);
+  res.redirect(`/urls/u/${id}`);
 });
 
 
@@ -72,6 +70,18 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]
   res.redirect(longURL);
+}); 
+
+app.get("/urls/u/:id", (req, res) => {
+  const id = req.params.id;
+  const url = urlDatabase[id];
+
+  if (!url) {
+    res.status(404).send("URL not found");
+  } else {
+    const templateVars = { id, longURL: url };
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -79,6 +89,15 @@ app.post("/urls/:id/delete", (req, res) => {
   delete  urlDatabase[id];
   res.redirect('/urls');
 });
+
+app.post("/urls/:id/edit", (req, res) => {
+  const id = req.params.id;
+  console.log(urlDatabase[id])
+  urlDatabase[id] = 'http://' + req.body.longURL;
+  console.log(urlDatabase[id])
+  res.redirect('/urls');
+});
+
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
