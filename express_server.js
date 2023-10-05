@@ -18,7 +18,13 @@ const generateRandomString = length => {
   }
 
   return randomString;
+}; 
+
+const getEmailById = id => {
+  const user = users.find(user => user.id === id);
+  return user ? user.email : null;
 };
+
 
 const users = [
    {
@@ -41,7 +47,7 @@ const urlDatabase = {
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  const isLoggedIn = req.cookies.username !== undefined;  
+  const isLoggedIn = req.cookies.user_id !== undefined;  
 
   if (isLoggedIn) {
     res.redirect('/urls')
@@ -53,23 +59,23 @@ app.get('/', (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const isLoggedIn = req.cookies.username !== undefined;
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
+  const isLoggedIn = req.cookies.user_id !== undefined;
+  const templateVars = { urls: urlDatabase, username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
   res.render('urls_index', templateVars);
 }); 
 
 app.get("/urls/new", (req, res) => {
-  const isLoggedIn = req.cookies.username !== undefined;
-  const templateVars = { username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
+  const isLoggedIn = req.cookies.user_id !== undefined;
+  const templateVars = { username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
   res.render("urls_new", templateVars);
 }); 
 
 
 app.get("/urls/:id", (req, res) => {
-  const isLoggedIn = req.cookies.username !== undefined; 
+  const isLoggedIn = req.cookies.user_id !== undefined; 
   const id = req.params.id;
   const url = urlDatabase[id];
-  const templateVars = { username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'  };
+  const templateVars = { username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'  };
 
   console.log("URL for ID", id, "is", url);
 
@@ -86,14 +92,14 @@ app.get("/u/:id", (req, res) => {
 }); 
 
 app.get("/urls/u/:id", (req, res) => {
-  const isLoggedIn = req.cookies.username !== undefined; 
+  const isLoggedIn = req.cookies.user_id !== undefined; 
   const id = req.params.id;
   const url = urlDatabase[id];
 
   if (!url) {
     res.status(404).send("URL not found");
   } else {
-    const templateVars = { id, longURL: url, username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'};
+    const templateVars = { id, longURL: url, username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'};
     res.render("urls_show", templateVars);
   }
 });
@@ -155,6 +161,8 @@ app.post('/register', (req, res) => {
   
     users.push(newUser);
 
+    res.cookie('user_id', newUser.id);
+    
     res.redirect('/urls');
   }
 });
