@@ -104,19 +104,31 @@ app.get("/urls/u/:id", (req, res) => {
   }
 });
 
+app.get('/login', (req, res) => {
+  res.render('login')
+});
+
+
 app.get('/register', (req, res) => {
   res.render('register')
 });
 
-app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username)
-  res.redirect('/urls')
+app.post('/login', (req, res) => {
+  const existingUser = users.find(user => user.email=== req.body.email);
+
+  if (!existingUser) {
+    res.status(404).send('User not found');
+  } else {
+    res.cookie('user_id', existingUser.id);
+    
+    res.redirect('/urls');
+  }
 });
 
 app.post("/logout", (req, res) => {
   console.log("Logout route triggered");
-  res.clearCookie("username"); 
-  res.redirect('/urls'); 
+  res.clearCookie("user_id"); 
+  res.redirect('/login'); 
 });
 
 app.post("/newurl", (req, res) => {
@@ -165,7 +177,9 @@ app.post('/register', (req, res) => {
     
     res.redirect('/urls');
   }
-});
+}); 
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);

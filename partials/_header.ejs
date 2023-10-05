@@ -23,13 +23,12 @@
             <span class="mr-2">Logged in as <%= username %></span>
             <button type="submit" class="btn btn-primary">Logout</button>
           <% } else { %>
-            <input
-              class="form-control"
-              type="text"
-              name="username"
-              placeholder="Username"
-            />
-            <button type="submit" class="btn btn-primary mx-2"><%= loginButtonLabel %></button>
+            <button type="button" class="btn btn-primary mx-2">
+              <a href="/login" style="color: white;">Login</a>
+            </button>
+            <button type="button" class="btn btn-primary mx-2">
+              <a href="/register" style="color: white;">Register</a>
+            </button>
           <% } %>
         </div>
       </form>
