@@ -4,7 +4,7 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
-function generateRandomString(length) {
+const generateRandomString = length => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
 
@@ -35,22 +35,6 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 }); 
-
-app.post("/newurl", (req, res) => {
-  const longURL = 'http://' + req.body.longURL;
-  const id = generateRandomString(6);
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/u/${id}`);
-});
-
-
-
-app.post("/urls", (req, res) => {
-  const id = generateRandomString(6);
-  const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`);
-});
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
@@ -84,6 +68,20 @@ app.get("/urls/u/:id", (req, res) => {
   }
 });
 
+app.post("/newurl", (req, res) => {
+  const longURL = 'http://' + req.body.longURL;
+  const id = generateRandomString(6);
+  urlDatabase[id] = longURL;
+  res.redirect(`/urls/u/${id}`);
+});
+
+app.post("/urls", (req, res) => {
+  const id = generateRandomString(6);
+  const longURL = req.body.longURL;
+  urlDatabase[id] = longURL;
+  res.redirect(`/urls/${id}`);
+});
+
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   delete  urlDatabase[id];
@@ -97,20 +95,6 @@ app.post("/urls/:id/edit", (req, res) => {
   console.log(urlDatabase[id])
   res.redirect('/urls');
 });
-
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-}); 
-
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
- });
- 
- app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
- });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
