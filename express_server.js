@@ -117,7 +117,7 @@ app.post('/login', (req, res) => {
   const existingUser = users.find(user => user.email=== req.body.email);
 
   if (!existingUser) {
-    res.status(404).send('User not found');
+    res.status(403).send('User not found');
   } else {
     res.cookie('user_id', existingUser.id);
     
