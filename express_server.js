@@ -1,8 +1,12 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan')
 
 app.set('view engine', 'ejs');
+app.use(cookieParser());
+app.use(morgan());
 
 const generateRandomString = length => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -23,31 +27,37 @@ const urlDatabase = {
 
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
+app.get('/', (req, res) => {
+  const isLoggedIn = req.cookies.username !== undefined; 
+
+  res.render('navbar', { loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' });
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const isLoggedIn = req.cookies.username !== undefined;
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
   res.render('urls_index', templateVars);
 }); 
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const isLoggedIn = req.cookies.username !== undefined;
+  const templateVars = { username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
+  res.render("urls_new", templateVars);
 }); 
 
-app.get("/urls/:id", (req, res) => {
-  const id = req.params.id;
 
+app.get("/urls/:id", (req, res) => {
+  const isLoggedIn = req.cookies.username !== undefined; 
+  const id = req.params.id;
   const url = urlDatabase[id];
+  const templateVars = { username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'  };
 
   console.log("URL for ID", id, "is", url);
 
   if (!url) {
     res.status(404).send("URL not found");
   } else {
-    // Redirect directly to the long URL
-    res.redirect(url);
+    res.redirect(url, templateVars);
   }
 });
 
@@ -57,21 +67,28 @@ app.get("/u/:id", (req, res) => {
 }); 
 
 app.get("/urls/u/:id", (req, res) => {
+  const isLoggedIn = req.cookies.username !== undefined; 
   const id = req.params.id;
   const url = urlDatabase[id];
 
   if (!url) {
     res.status(404).send("URL not found");
   } else {
-    const templateVars = { id, longURL: url };
+    const templateVars = { id, longURL: url, username: req.cookies["username"], loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'};
     res.render("urls_show", templateVars);
   }
 });
 
 app.post("/login", (req, res) => {
-  res.cookie('username', {username: req.body.username})
+  res.cookie('username', req.body.username)
   res.redirect('/urls')
 })
+
+app.post("/logout", (req, res) => {
+  console.log("Logout route triggered");
+  res.clearCookie("username"); 
+  res.redirect('/urls'); 
+});
 
 app.post("/newurl", (req, res) => {
   const longURL = 'http://' + req.body.longURL;
