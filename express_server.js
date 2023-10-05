@@ -68,6 +68,11 @@ app.get("/urls/u/:id", (req, res) => {
   }
 });
 
+app.post("/login", (req, res) => {
+  res.cookie('username', {username: req.body.username})
+  res.redirect('/urls')
+})
+
 app.post("/newurl", (req, res) => {
   const longURL = 'http://' + req.body.longURL;
   const id = generateRandomString(6);
