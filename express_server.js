@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
+const cookieParser = require('cookie-parser'); 
+const morgan = require('morgan');;
+const bcrypt = require('bcryptjs')
 
 app.set('view engine', 'ejs');
 app.use(cookieParser());
@@ -23,11 +24,15 @@ const generateRandomString = length => {
 const getEmailById = id => {
   const user = users.find(user => user.id === id);
   return user ? user.email : null;
-};
+}; 
 
+const validateId = id => {
+  const user = users.find(user => user.id === id);
+  return user;
+}; 
 
 const users = [
-   {
+  {
     id: "userRandomID",
     email: "user@example.com",
     password: "purple-monkey-dinosaur",
@@ -40,127 +45,111 @@ const users = [
 ];
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "userRandomID", 
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "user2RandomID", 
+  },
 };
 
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  const isLoggedIn = req.cookies.user_id !== undefined;  
+  const isLoggedIn = validateId(req.cookies.user_id);   
 
   if (isLoggedIn) {
-    res.redirect('/urls')
+    res.redirect('/urls');
   } else {
-    res.redirect('/login')
+    res.redirect('/login');
   }
 
   res.render('navbar', { loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' });
 });
 
 app.get("/urls", (req, res) => {
-  const isLoggedIn = req.cookies.user_id !== undefined;
-  const templateVars = { urls: urlDatabase, username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
+  const isLoggedIn = validateId(req.cookies.user_id);
+  const userURLs = {};
+
+  if (isLoggedIn) {
+    for (const urlID in urlDatabase) {
+      if (urlDatabase[urlID].userID === req.cookies.user_id) {
+        userURLs[urlID] = urlDatabase[urlID];
+      }
+    }
+  }
+
+  const templateVars = { urls: userURLs, username: getEmailById(req.cookies.user_id), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
   res.render('urls_index', templateVars);
 }); 
 
 app.get("/urls/new", (req, res) => {
-  const isLoggedIn = req.cookies.user_id !== undefined;
-  const templateVars = { username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
-  res.render("urls_new", templateVars);
-}); 
+  const isLoggedIn = validateId(req.cookies.user_id); 
+  const templateVars = { username: getEmailById(req.cookies.user_id), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login' };
 
+  if (isLoggedIn) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/login');
+  }
+}); 
 
 app.get("/urls/:id", (req, res) => {
-  const isLoggedIn = req.cookies.user_id !== undefined; 
-  const id = req.params.id;
-  const url = urlDatabase[id];
-  const templateVars = { username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'  };
-
-  console.log("URL for ID", id, "is", url);
-
-  if (!url) {
-    res.status(404).send("URL not found");
-  } else {
-    res.redirect(url, templateVars);
-  }
-});
-
-app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id]
-  res.redirect(longURL);
-}); 
-
-app.get("/urls/u/:id", (req, res) => {
-  const isLoggedIn = req.cookies.user_id !== undefined; 
+  const isLoggedIn = validateId(req.cookies.user_id);  
   const id = req.params.id;
   const url = urlDatabase[id];
 
   if (!url) {
     res.status(404).send("URL not found");
-  } else {
-    const templateVars = { id, longURL: url, username: getEmailById(req.cookies["user_id"]), loginButtonLabel: isLoggedIn ? 'Logout' : 'Login'};
+    console.log(id)
+  } else if (isLoggedIn && url.userID === req.cookies.user_id) {
+    const templateVars = { id, longURL: url.longURL, username: getEmailById(req.cookies.user_id), loginButtonLabel: 'Logout' };
     res.render("urls_show", templateVars);
+  } else {
+    res.status(403).send("You do not have permission to access this URL.");
   }
 });
 
 app.get('/login', (req, res) => {
-  res.render('login')
-});
-
-
-app.get('/register', (req, res) => {
-  res.render('register')
-});
-
-app.post('/login', (req, res) => {
-  const existingUser = users.find(user => user.email=== req.body.email);
-
-  if (!existingUser) {
-    res.status(403).send('User not found');
-  } else {
-    res.cookie('user_id', existingUser.id);
-    
+  const isLoggedIn = validateId(req.cookies.user_id);   
+  
+  if (isLoggedIn) {
     res.redirect('/urls');
+  } else {
+    res.render('login');
   }
 });
 
-app.post("/logout", (req, res) => {
-  console.log("Logout route triggered");
-  res.clearCookie("user_id"); 
-  res.redirect('/login'); 
-});
+app.get('/register', (req, res) => {
+  const isLoggedIn = validateId(req.cookies.user_id);   
+  
+  if (isLoggedIn) {
+    res.redirect('/urls');
+  } else {
+    res.render('register');
+  }
+}); 
 
-app.post("/newurl", (req, res) => {
-  const longURL = 'http://' + req.body.longURL;
-  const id = generateRandomString(6);
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/u/${id}`);
-});
-
-app.post("/urls", (req, res) => {
-  const id = generateRandomString(6);
-  const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`);
-});
-
-app.post("/urls/:id/delete", (req, res) => {
+app.get("/:id", (req, res) => {
   const id = req.params.id;
-  delete  urlDatabase[id];
-  res.redirect('/urls');
-});
-
-app.post("/urls/:id/edit", (req, res) => {
-  const id = req.params.id;
-  console.log(urlDatabase[id])
-  urlDatabase[id] = 'http://' + req.body.longURL;
-  console.log(urlDatabase[id])
-  res.redirect('/urls');
+  if (urlDatabase[id] && urlDatabase[id].longURL) {
+    const longURL = urlDatabase[id].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("URL not found");
+  }
 });
 
 app.post('/register', (req, res) => {
-  const existingUser = users.find(user => user.email=== req.body.email);
+  const isLoggedIn = validateId(req.cookies.user_id); 
+
+  if (isLoggedIn) {
+    return res.redirect('/urls');
+  }
+
+  const existingUser = users.find(user => user.email === req.body.email);
 
   if (existingUser) {
     res.status(400).send('User already exists');
@@ -168,19 +157,109 @@ app.post('/register', (req, res) => {
     const newUser = {
       id: generateRandomString(6),
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hashSync(req.body.password, 10)
     };
-  
-    users.push(newUser);
 
+    users.push(newUser);
     res.cookie('user_id', newUser.id);
-    
     res.redirect('/urls');
   }
-}); 
+});
 
+app.post('/login', (req, res) => {
+  const existingUser = users.find(user => user.email === req.body.email);
 
+  if (!existingUser) {
+    res.status(403).send('User not found');
+  } else if (bcrypt.compareSync(req.body.password, existingUser.password)) {
+    res.cookie('user_id', existingUser.id);
+    res.redirect('/urls');
+  } else {
+    res.status(403).send('Incorrect password');
+  }
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id"); 
+  res.redirect('/login'); 
+});
+
+app.post("/newurl", (req, res) => {
+  const isLoggedIn = validateId(req.cookies.user_id); 
+
+  if (isLoggedIn) {
+    const longURL = 'http://' + req.body.longURL;
+    const id = generateRandomString(6);
+    const userID = req.cookies.user_id;
+
+    urlDatabase[id] = { longURL, userID };
+    res.redirect(`/urls/${id}`);
+  } else {
+    res.status(401).send("You are not logged in.");
+  }
+});
+
+app.post("/urls", (req, res) => {
+  const isLoggedIn = validateId(req.cookies.user_id); 
+
+  if (isLoggedIn) {
+    const id = generateRandomString(6);
+    const longURL = 'http://' + req.body.longURL;
+    const userID = req.cookies.user_id;
+
+    urlDatabase[id] = { longURL, userID };
+    res.redirect(`/urls/${id}`);
+  } else {
+    res.status(401).send("You are not logged in.");
+  }
+});
+
+app.post("/urls/:id/delete", (req, res) => {
+  const isLoggedIn = validateId(req.cookies.user_id); 
+
+  if (!isLoggedIn) {
+    return res.status(401).send('You are not logged in.');
+  }
+
+  const id = req.params.id;
+  const url = urlDatabase[id];
+
+  if (!url) {
+    return res.status(404).send('URL not found.');
+  }
+
+  if (url.userID === req.cookies.user_id) {
+    delete urlDatabase[id];
+    res.redirect('/urls');
+  } else {
+    res.status(403).send('You do not have permission to delete this URL.');
+  }
+});
+
+app.post("/urls/:id/edit", (req, res) => {
+  const isLoggedIn = validateId(req.cookies.user_id);
+
+  if (!isLoggedIn) {
+    return res.status(401).send('You are not logged in.');
+  }
+
+  const id = req.params.id;
+  const url = urlDatabase[id];
+
+  if (!url) {
+    return res.status(404).send('URL not found.');
+  }
+
+  if (url.userID === req.cookies.user_id) {
+    const longURL = 'http://' + req.body.longURL;
+    urlDatabase[id].longURL = longURL;
+    res.redirect('/urls');
+  } else {
+    res.status(403).send('You do not have permission to edit this URL.');
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
