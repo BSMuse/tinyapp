@@ -23,18 +23,18 @@ TinyApp is a URL shortening service that allows users to convert long URLs into 
 - Secure user registration and authentication.
 - User-specific URL management.
 
+
 ## Getting Started
 
 To get started with TinyApp, follow these steps:
 
-```bash
-# Clone the repository:
+### Clone the repository:
 git clone https://github.com/BSMuse/tinyapp.git
 
-# Install the project dependencies:
+### Install the project dependencies:
 npm install
 
-# Start the TinyApp server:
+### Start the TinyApp server:
 npm start
 
 
