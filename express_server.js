@@ -1,4 +1,5 @@
 const express = require("express");
+const { generateRandomString, getEmailById, userExistsByEmail, validateId } = require('./helper'); 
 const app = express();
 const PORT = 8080; // default port 8080
 const cookiesession = require('cookie-session'); 
@@ -13,40 +14,18 @@ app.use(cookiesession({
   keys: ['muh-secret-key-shhhhh'], 
 }));
 
-const generateRandomString = length => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let randomString = '';
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    randomString += characters.charAt(randomIndex);
+const users = {
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
   }
-
-  return randomString;
-}; 
-
-const getEmailById = (id, database) => {
-  const user = database.find(user => user.id === id);
-  return user ? user.email : null;
-}; 
-
-const validateId = (id, database) => {
-  const user = database.find(user => user.id === id);
-  return user;
-}; 
-
-const users = [
-  {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-];
+};
 
 const urlDatabase = {
   b6UTxQ: {
@@ -150,11 +129,9 @@ app.post('/register', (req, res) => {
 
   if (isLoggedIn) {
     return res.redirect('/urls');
-  }
+  };
 
-  const existingUser = users.find(user => user.email === req.body.email);
-
-  if (existingUser) {
+  if (userExistsByEmail(req.body.email, users)) {
     res.status(400).send('User already exists');
   } else {
     const newUser = {
@@ -163,15 +140,14 @@ app.post('/register', (req, res) => {
       password: bcrypt.hashSync(req.body.password, 10)
     };
 
-    users.push(newUser);
+    users[newUser.id] = newUser;
     req.session.user_id = newUser.id;
     res.redirect('/urls');
   }
 });
 
 app.post('/login', (req, res) => {
-  const existingUser = users.find(user => user.email === req.body.email);
-
+  const existingUser = userExistsByEmail(req.body.email, users)
   if (!existingUser) {
     res.status(403).send('User not found');
   } else if (bcrypt.compareSync(req.body.password, existingUser.password)) {
